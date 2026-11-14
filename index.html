@@ -6,6 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EarthSong | Listen to Our Planet</title>
 
+.ocean-video {
+  width: 100%;
+  max-width: 750px;
+  border-radius: 18px;
+  margin: 25px auto;
+  display: block;
+  border: 1px solid rgba(114,230,192,0.4);
+}
+
 <style>
 * {
   box-sizing: border-box;
@@ -124,6 +133,25 @@ footer {
     into sound, allowing us to experience our planet
     in a completely different way.
   </p>
+
+<h2>Explore Earth's Oceans 🌊</h2>
+
+<video class="ocean-video" controls muted loop playsinline>
+  <source src="ecco2_sst_flow.webmhd.webm" type="video/webm">
+  Your browser does not support this video.
+</video>
+
+<p>
+  Ocean currents and sea surface temperatures,
+  visualized using NASA's ECCO2 model.
+</p>
+
+<p>
+  Visualization source:
+  <a href="https://svs.gsfc.nasa.gov/3912/" target="_blank">
+    NASA Scientific Visualization Studio
+  </a>
+</p>
 
   <button onclick="playDemo()">▶ Play Sound Demo</button>
   <button class="secondary" onclick="stopDemo()">■ Stop</button>
