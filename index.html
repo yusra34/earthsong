@@ -4,16 +4,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EarthSong | Listen to Our Planet</title>
 
-.ocean-video {
-  width: 100%;
-  max-width: 750px;
-  border-radius: 18px;
-  margin: 25px auto;
-  display: block;
-  border: 1px solid rgba(114,230,192,0.4);
-}
+<title>EarthSong | Listen to Our Planet</title>
 
 <style>
 * {
@@ -49,13 +41,13 @@ nav a {
 
 main {
   text-align: center;
-  padding: 65px 20px;
-  max-width: 850px;
+  padding: 45px 20px;
+  max-width: 900px;
   margin: auto;
 }
 
 .earth {
-  font-size: 100px;
+  font-size: 85px;
   margin: 15px;
   filter: drop-shadow(0 0 25px #38c9b5);
 }
@@ -72,7 +64,7 @@ h1 span {
 p {
   color: #b8ccd8;
   line-height: 1.7;
-  font-size: 17px;
+  font-size: 16px;
 }
 
 button {
@@ -80,11 +72,11 @@ button {
   color: #071522;
   border: none;
   border-radius: 30px;
-  padding: 15px 30px;
-  font-size: 16px;
+  padding: 14px 25px;
+  font-size: 15px;
   font-weight: bold;
   cursor: pointer;
-  margin: 15px 8px;
+  margin: 10px 5px;
 }
 
 button:hover {
@@ -98,12 +90,26 @@ button:hover {
 }
 
 .panel {
-  margin: 55px auto 0;
+  margin: 35px auto;
   padding: 25px;
-  max-width: 650px;
+  max-width: 750px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(114,230,192,0.25);
   border-radius: 18px;
+}
+
+.ocean-video {
+  width: 100%;
+  max-width: 750px;
+  border-radius: 18px;
+  margin: 20px auto;
+  display: block;
+  border: 1px solid rgba(114,230,192,0.4);
+}
+
+#status {
+  color: #72e6c0;
+  font-weight: bold;
 }
 
 footer {
@@ -112,6 +118,11 @@ footer {
   color: #7894a5;
   font-size: 13px;
 }
+
+a {
+  color: #72e6c0;
+}
+
 </style>
 </head>
 
@@ -123,6 +134,7 @@ footer {
 </nav>
 
 <main>
+
   <div class="earth">🌎</div>
 
   <h1>Listen to <span>Our Planet.</span></h1>
@@ -134,93 +146,311 @@ footer {
     in a completely different way.
   </p>
 
-<h2>Explore Earth's Oceans 🌊</h2>
+  <section class="panel">
+    <h2>🌊 Explore Earth's Oceans</h2>
 
-<video class="ocean-video" controls muted loop playsinline>
-  <source src="ecco2_sst_flow.webmhd.webm" type="video/webm">
-  Your browser does not support this video.
-</video>
+    <video
+      id="oceanVideo"
+      class="ocean-video"
+      controls
+      muted
+      loop
+      playsinline
+      preload="metadata">
 
-<p>
-  Ocean currents and sea surface temperatures,
-  visualized using NASA's ECCO2 model.
-</p>
+      <source
+        src="ecco2_sst_flow.webmhd.webm"
+        type="video/webm">
 
-<p>
-  Visualization source:
-  <a href="https://svs.gsfc.nasa.gov/3912/" target="_blank">
-    NASA Scientific Visualization Studio
-  </a>
-</p>
+      Your browser does not support this video.
+    </video>
 
-  <button onclick="playDemo()">▶ Play Sound Demo</button>
-  <button class="secondary" onclick="stopDemo()">■ Stop</button>
+    <p>
+      Ocean currents and sea surface temperatures,
+      visualized using NASA's ECCO2 model.
+    </p>
+
+    <p>
+      Source:
+      <a href="https://svs.gsfc.nasa.gov/3912/" target="_blank">
+        NASA Scientific Visualization Studio
+      </a>
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>🎵 OceanSong Generator</h2>
+
+    <p>
+      Our experimental sonification feature analyses
+      colours in the NASA ocean visualization and
+      maps them to musical pitches using the
+      temperature colour scale.
+    </p>
+
+    <button onclick="generateOceanSong()">
+      ▶ Generate Ocean Sound
+    </button>
+
+    <button class="secondary" onclick="stopOceanSong()">
+      ■ Stop Sound
+    </button>
+
+    <p id="status">
+      Ready to turn the ocean into music.
+    </p>
+
+    <p id="details"></p>
+  </section>
 
   <section class="panel" id="about">
     <h2>Science meets sound.</h2>
+
     <p>
       From ocean temperatures to changing forests,
       Earth's data tells stories. EarthSong aims to
       turn those stories into soundscapes that everyone
       can explore and understand.
     </p>
-    <p id="status">Ready to explore? Press Play Sound Demo.</p>
   </section>
+
 </main>
 
 <footer>
-  An experimental NASA Space Apps Challenge project · EarthSong
+  NASA Space Apps Challenge Project · EarthSong
 </footer>
 
+<img
+  id="temperatureScale"
+  src="sst_ecco2_cbar.png"
+  alt=""
+  style="display:none">
+
 <script>
+
 let audioContext;
-let activeOscillators = [];
+let activeSounds = [];
+let stopTimer;
 
-function playDemo() {
-  stopDemo();
+const video = document.getElementById("oceanVideo");
+const statusText = document.getElementById("status");
+const detailsText = document.getElementById("details");
 
-  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+function stopOceanSong() {
 
-  const notes = [220, 261.63, 329.63, 392, 329.63, 261.63];
+  clearTimeout(stopTimer);
 
-  notes.forEach((frequency, index) => {
-    const oscillator = audioContext.createOscillator();
-    const volume = audioContext.createGain();
-
-    oscillator.type = "sine";
-    oscillator.frequency.value = frequency;
-
-    const start = audioContext.currentTime + index * 0.45;
-
-    volume.gain.setValueAtTime(0, start);
-    volume.gain.linearRampToValueAtTime(0.12, start + 0.08);
-    volume.gain.linearRampToValueAtTime(0, start + 0.4);
-
-    oscillator.connect(volume);
-    volume.connect(audioContext.destination);
-
-    oscillator.start(start);
-    oscillator.stop(start + 0.42);
-
-    activeOscillators.push(oscillator);
-  });
-
-  document.getElementById("status").textContent =
-    "Playing an illustrative sound demo — not NASA data yet!";
-}
-
-function stopDemo() {
-  activeOscillators.forEach(oscillator => {
+  activeSounds.forEach(sound => {
     try {
-      oscillator.stop();
+      sound.stop();
     } catch (error) {}
   });
 
-  activeOscillators = [];
+  activeSounds = [];
 
-  document.getElementById("status").textContent =
-    "Demo stopped. Ready to explore!";
+  if (audioContext) {
+    audioContext.close();
+    audioContext = null;
+  }
+
+  statusText.textContent = "Sound stopped.";
+  detailsText.textContent = "";
 }
+
+function loadImage(image) {
+  return new Promise((resolve, reject) => {
+
+    if (image.complete && image.naturalWidth > 0) {
+      resolve();
+      return;
+    }
+
+    image.onload = resolve;
+    image.onerror = reject;
+  });
+}
+
+function getTemperaturePalette(image) {
+
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d", {
+    willReadFrequently: true
+  });
+
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+
+  context.drawImage(image, 0, 0);
+
+  const width = canvas.width;
+  const height = canvas.height;
+
+  const horizontal = width >= height;
+  const length = horizontal ? width : height;
+
+  const fixedPosition = horizontal
+    ? Math.floor(height / 2)
+    : Math.floor(width / 2);
+
+  const palette = [];
+
+  for (let i = 0; i < 100; i++) {
+
+    const position = Math.floor(
+      (i / 99) * (length - 1)
+    );
+
+    const x = horizontal ? position : fixedPosition;
+    const y = horizontal ? fixedPosition : position;
+
+    const pixel = context.getImageData(x, y, 1, 1).data;
+
+    palette.push([
+      pixel[0],
+      pixel[1],
+      pixel[2]
+    ]);
+  }
+
+  return palette;
+}
+
+function findClosestColour(pixel, palette) {
+
+  let bestIndex = 0;
+  let smallestDistance = Infinity;
+
+  palette.forEach((colour, index) => {
+
+    const distance =
+      Math.pow(pixel[0] - colour[0], 2) +
+      Math.pow(pixel[1] - colour[1], 2) +
+      Math.pow(pixel[2] - colour[2], 2);
+
+    if (distance < smallestDistance) {
+      smallestDistance = distance;
+      bestIndex = index;
+    }
+  });
+
+  return bestIndex;
+}
+
+async function generateOceanSong() {
+
+  stopOceanSong();
+
+  statusText.textContent = "Analysing NASA ocean visualization...";
+  detailsText.textContent = "";
+
+  try {
+
+    await loadImage(
+      document.getElementById("temperatureScale")
+    );
+
+    if (video.readyState < 2) {
+      statusText.textContent =
+        "Please press play on the ocean video first, then try again.";
+      return;
+    }
+
+    const image = document.getElementById("temperatureScale");
+
+    const palette = getTemperaturePalette(image);
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d", {
+      willReadFrequently: true
+    });
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    context.drawImage(video, 0, 0);
+
+    const notes = [];
+    const sampleCount = 12;
+
+    for (let i = 0; i < sampleCount; i++) {
+
+      const x = Math.floor(
+        ((i + 0.5) / sampleCount) * canvas.width
+      );
+
+      const y = Math.floor(canvas.height / 2);
+
+      const pixel = context.getImageData(
+        x, y, 1, 1
+      ).data;
+
+      const colourIndex = findClosestColour(
+        [pixel[0], pixel[1], pixel[2]],
+        palette
+      );
+
+      const pitch = 180 + colourIndex * 4;
+
+      notes.push(pitch);
+    }
+
+    audioContext = new (
+      window.AudioContext ||
+      window.webkitAudioContext
+    )();
+
+    await audioContext.resume();
+
+    const startTime = audioContext.currentTime + 0.1;
+
+    notes.forEach((frequency, index) => {
+
+      const oscillator = audioContext.createOscillator();
+      const volume = audioContext.createGain();
+
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+
+      const start = startTime + index * 0.35;
+
+      volume.gain.setValueAtTime(0, start);
+      volume.gain.linearRampToValueAtTime(
+        0.12, start + 0.08
+      );
+      volume.gain.linearRampToValueAtTime(
+        0, start + 0.3
+      );
+
+      oscillator.connect(volume);
+      volume.connect(audioContext.destination);
+
+      oscillator.start(start);
+      oscillator.stop(start + 0.32);
+
+      activeSounds.push(oscillator);
+    });
+
+    statusText.textContent =
+      "Your ocean soundscape is playing!";
+
+    detailsText.textContent =
+      "12 colours sampled and converted into musical pitches.";
+
+    stopTimer = setTimeout(() => {
+      statusText.textContent =
+        "Ocean soundscape complete. Generate another one!";
+    }, 4500);
+
+  } catch (error) {
+
+    console.error(error);
+
+    statusText.textContent =
+      "Something went wrong. Check that both NASA files are uploaded correctly.";
+
+  }
+}
+
 </script>
 
 </body>
